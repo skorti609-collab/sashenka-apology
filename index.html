@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#100b18">
+  <title>Для Сашеньки 💜</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; --purple:#a855f7; --pink:#d8b4fe; }
+    * { box-sizing:border-box }
+    body {
+      margin:0; min-height:100vh; display:grid; place-items:center; padding:28px 16px;
+      font-family:Manrope,system-ui,sans-serif; color:#f7f0ff;
+      background: radial-gradient(ellipse at 15% 15%, #48206d 0, transparent 38%),
+                  radial-gradient(ellipse at 90% 85%, #30104e 0, transparent 35%), #0b0910;
+    }
+    .card {
+      width:min(100%, 620px); padding:clamp(26px,6vw,54px); border:1px solid #75439b88;
+      border-radius:30px; text-align:center; background:linear-gradient(145deg,#1b1326ee,#100d18f2);
+      box-shadow:0 25px 100px #0009, inset 0 1px #ffffff12;
+    }
+    .heart { font-size:42px; filter:drop-shadow(0 0 18px #c084fc); animation:pulse 2s infinite; }
+    @keyframes pulse { 50% { transform:scale(1.12) } }
+    .eyebrow { color:#c9a4ef; letter-spacing:.18em; text-transform:uppercase; font-size:11px; font-weight:800; }
+    h1 { margin:12px 0 18px; font-size:clamp(32px,7vw,48px); line-height:1.08; }
+    h1 span { color:#c084fc; }
+    p { color:#d8cde2; line-height:1.8; font-size:15px; }
+    .note { margin:26px 0; padding:20px; border-radius:18px; background:#ffffff08; border:1px solid #ffffff12; }
+    .note p { margin:0; }
+    .question { margin:30px 0 12px; color:#fff; font-weight:800; font-size:18px; }
+    input[type=date] {
+      width:100%; padding:15px 16px; border:1px solid #8b5bb2; border-radius:14px;
+      background:#171020; color:#fff; font:600 16px Manrope; outline:none;
+    }
+    input:focus { border-color:#c084fc; box-shadow:0 0 0 3px #a855f733; }
+    button {
+      width:100%; margin-top:14px; padding:16px; border:0; border-radius:14px;
+      background:linear-gradient(100deg,#7e22ce,#a855f7); color:white; font:800 15px Manrope;
+      cursor:pointer; transition:transform .2s,filter .2s; box-shadow:0 10px 30px #7e22ce44;
+    }
+    button:hover { transform:translateY(-2px); filter:brightness(1.12); }
+    button:disabled { opacity:.65; cursor:wait; }
+    #result { min-height:28px; margin-top:18px; color:#e9d5ff; font-weight:700; }
+    .small { margin-top:26px; font-size:12px; color:#8f829d; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="heart">💜</div>
+    <div class="eyebrow">это письмо только для тебя</div>
+    <h1>Сашенька,<br><span>мой Котёнок</span></h1>
+    <div class="note">
+      <p>Любимая, прости меня, если я тебя расстроил или обидел. Мне правда жаль. Ты очень дорога мне, и я не хочу, чтобы между нами оставались недосказанность или грусть.</p>
+      <p style="margin-top:14px">Я не жду, что всё сразу станет идеально. Просто хочу спокойно поговорить, выслушать тебя и, если ты захочешь, провести время вместе. ❤️</p>
+    </div>
+    <p class="question">Можно пригласить тебя на свидание?</p>
+    <p>Выбери день, который тебе подходит — с 20 по 30 ноября.</p>
+    <form id="dateForm">
+      <input id="date" type="date" min="2026-11-20" max="2026-11-30" required>
+      <button id="submit" type="submit">Выбрать дату 💜</button>
+    </form>
+    <div id="result" aria-live="polite"></div>
+    <div class="small">С любовью и надеждой на нашу тёплую встречу ✨</div>
+  </main>
+<script>
+  const form = document.getElementById('dateForm');
+  const dateInput = document.getElementById('date');
+  const result = document.getElementById('result');
+  const button = document.getElementById('submit');
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!dateInput.value) return;
+    button.disabled = true;
+    result.textContent = 'Сохраняю твой выбор…';
+    try {
+      const response = await fetch('/choose', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({date: dateInput.value})
+      });
+      const data = await response.json();
+      result.textContent = data.message || 'Не получилось сохранить дату.';
+    } catch {
+      result.textContent = 'Не удалось отправить выбор. Попробуй ещё раз.';
+    } finally { button.disabled = false; }
+  });
+</script>
+</body>
+</html>

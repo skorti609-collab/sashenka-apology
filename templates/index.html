@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Для Сашеньки 💜</title>
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;min-height:100vh;display:grid;place-items:center;
+padding:20px;font-family:Arial,sans-serif;color:white;
+background:radial-gradient(circle at top,#48206d,#0b0910 70%);
+}
+.card{
+width:min(100%,600px);padding:40px 28px;text-align:center;
+background:#191222;border:1px solid #75439b;
+border-radius:25px;box-shadow:0 20px 70px #0009;
+}
+.heart{font-size:45px}
+h1{font-size:38px;line-height:1.2}
+h1 span{color:#c084fc}
+p{color:#dfd2e9;line-height:1.8}
+.note{padding:20px;background:#ffffff09;border-radius:16px}
+input,button{
+width:100%;padding:16px;margin-top:12px;
+border-radius:12px;font-size:16px;
+}
+input{background:#100b18;color:white;border:1px solid #a855f7}
+button{
+border:0;background:linear-gradient(90deg,#7e22ce,#a855f7);
+color:white;font-weight:bold;cursor:pointer;
+}
+#result{margin-top:20px;color:#e9d5ff;font-weight:bold}
+</style>
+</head>
+<body>
+<main class="card">
+<div class="heart">💜</div>
+<p>ЭТО ПИСЬМО ТОЛЬКО ДЛЯ ТЕБЯ</p>
+<h1>Сашенька,<br><span>мой Котёнок</span></h1>
+<div class="note">
+<p>Любимая, прости меня, если я тебя расстроил или обидел. Мне правда жаль. Ты очень дорога мне, и я не хочу, чтобы между нами оставались недосказанность или грусть.</p>
+<p>Я не жду, что всё сразу станет идеально. Просто хочу спокойно поговорить, выслушать тебя и, если ты захочешь, провести время вместе. ❤️</p>
+</div>
+<h3>Можно пригласить тебя на свидание?</h3>
+<p>Выбери день с 20 по 30 ноября 2026 года.</p>
+<form id="dateForm">
+<input id="date" type="date" min="2026-11-20" max="2026-11-30" required>
+<button type="submit" id="submit">Выбрать дату 💜</button>
+</form>
+<div id="result"></div>
+<p>С любовью и надеждой на нашу тёплую встречу ✨</p>
+</main>
+<script>
+document.getElementById('dateForm').addEventListener('submit',async e=>{
+e.preventDefault();
+const date=document.getElementById('date').value;
+const result=document.getElementById('result');
+const button=document.getElementById('submit');
+button.disabled=true;
+result.textContent='Сохраняю твой выбор…';
+try{
+const response=await fetch('/choose',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({date})
+});
+const data=await response.json();
+result.textContent=data.message;
+}catch(err){
+result.textContent='Не удалось отправить выбор. Попробуй ещё раз.';
+}
+button.disabled=false;
+});
+</script>
+</body>
+</html>

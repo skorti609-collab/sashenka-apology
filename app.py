@@ -1,45 +1,51 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import date
-import json
-import os
-from pathlib import Path
 
 app = Flask(__name__)
-DATA_FILE = Path(os.environ.get("DATA_FILE", "selections.json"))
-ALLOWED_PLANS = {"KFC", "Макдоналдс", "Закажем суши домой"}
+app.secret_key = 'change-this-to-a-long-random-secret-key'
 
-@app.get("/")
+MIN_DATE = date(2026, 11, 26)
+MAX_DATE = date(2026, 12, 5)
+PLACES = {'kfc': 'KFC', 'mcdonalds': "McDonald's", 'sushi': 'Суши домой'}
+
+@app.get('/')
 def index():
-    return render_template("index.html")
+    return render_template('index.html', min_date=MIN_DATE.isoformat(), max_date=MAX_DATE.isoformat())
 
-@app.post("/choose")
-def choose():
-    payload = request.get_json(silent=True) or {}
-    chosen = payload.get("date", "")
-    plan = payload.get("plan", "")
-
+@app.post('/choose-date')
+def choose_date():
+    raw_date = request.form.get('date', '')
     try:
-        selected = date.fromisoformat(chosen)
-    except (TypeError, ValueError):
-        return jsonify(ok=False, message="Пожалуйста, выбери дату в календаре 💜"), 400
+        chosen = date.fromisoformat(raw_date)
+    except ValueError:
+        return redirect(url_for('index'))
+    if not MIN_DATE <= chosen <= MAX_DATE:
+        return redirect(url_for('index'))
+    session['chosen_date'] = chosen.strftime('%d.%m.%Y')
+    return redirect(url_for('place'))
 
-    if not (date(2026, 11, 26) <= selected <= date(2026, 12, 5)):
-        return jsonify(ok=False, message="Дата должна быть с 26 ноября по 5 декабря 2026 года."), 400
+@app.route('/place', methods=['GET', 'POST'])
+def place():
+    if 'chosen_date' not in session:
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        choice = request.form.get('place', '')
+        if choice not in PLACES:
+            return redirect(url_for('place'))
+        session['chosen_place'] = PLACES[choice]
+        return redirect(url_for('thanks'))
+    return render_template('place.html', chosen_date=session['chosen_date'])
 
-    if plan not in ALLOWED_PLANS:
-        return jsonify(ok=False, message="Выбери один из вариантов свидания 💜"), 400
+@app.get('/thanks')
+def thanks():
+    if 'chosen_date' not in session or 'chosen_place' not in session:
+        return redirect(url_for('index'))
+    return render_template('thanks.html', chosen_date=session['chosen_date'], chosen_place=session['chosen_place'])
 
-    record = {"date": chosen, "plan": plan}
-    try:
-        existing = json.loads(DATA_FILE.read_text(encoding="utf-8")) if DATA_FILE.exists() else []
-        if not isinstance(existing, list):
-            existing = []
-        existing.append(record)
-        DATA_FILE.write_text(json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8")
-    except OSError:
-        app.logger.exception("Could not save date and plan selection")
+@app.get('/reset')
+def reset():
+    session.clear()
+    return redirect(url_for('index'))
 
-    return jsonify(ok=True, message="Твой выбор сохранён 💜")
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

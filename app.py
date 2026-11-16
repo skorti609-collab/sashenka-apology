@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, jsonify
 from datetime import date
-import os, json
+import json
+import os
 from pathlib import Path
 
 app = Flask(__name__)
 DATA_FILE = Path(os.environ.get("DATA_FILE", "selections.json"))
+ALLOWED_PLANS = {"KFC", "Макдоналдс", "Закажем суши домой"}
 
 @app.get("/")
 def index():
@@ -14,16 +16,20 @@ def index():
 def choose():
     payload = request.get_json(silent=True) or {}
     chosen = payload.get("date", "")
+    plan = payload.get("plan", "")
+
     try:
         selected = date.fromisoformat(chosen)
     except (TypeError, ValueError):
-        return jsonify(ok=False, message="Выбери дату из календаря 💜"), 400
+        return jsonify(ok=False, message="Пожалуйста, выбери дату в календаре 💜"), 400
 
-    # This page is configured for November 20–30, 2026.
-    if selected.year != 2026 or selected.month != 11 or not 20 <= selected.day <= 30:
-        return jsonify(ok=False, message="Можно выбрать дату с 20 по 30 ноября."), 400
+    if not (date(2026, 11, 26) <= selected <= date(2026, 12, 5)):
+        return jsonify(ok=False, message="Дата должна быть с 26 ноября по 5 декабря 2026 года."), 400
 
-    record = {"date": chosen}
+    if plan not in ALLOWED_PLANS:
+        return jsonify(ok=False, message="Выбери один из вариантов свидания 💜"), 400
+
+    record = {"date": chosen, "plan": plan}
     try:
         existing = json.loads(DATA_FILE.read_text(encoding="utf-8")) if DATA_FILE.exists() else []
         if not isinstance(existing, list):
@@ -31,9 +37,9 @@ def choose():
         existing.append(record)
         DATA_FILE.write_text(json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8")
     except OSError:
-        app.logger.exception("Could not save date selection")
+        app.logger.exception("Could not save date and plan selection")
 
-    return jsonify(ok=True, message=f"Ура! Тогда наше свидание — {selected.day} ноября 💜")
+    return jsonify(ok=True, message="Твой выбор сохранён 💜")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
